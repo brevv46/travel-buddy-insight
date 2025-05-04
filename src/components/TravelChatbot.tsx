@@ -210,9 +210,9 @@ const TravelChatbot: React.FC = () => {
           position.coords.longitude
         );
         setUserLocation(locationName);
-        console.log('User location:', locationName);
+        console.log('Lokasi pengguna:', locationName);
       } catch (error) {
-        console.error('Error getting user location:', error);
+        console.error('Error mendapatkan lokasi pengguna:', error);
         toast.error('Tidak dapat mengakses lokasi Anda. Beberapa fitur mungkin terbatas.');
       }
     };
@@ -283,7 +283,7 @@ const TravelChatbot: React.FC = () => {
       try {
         travelData = await generateTravelRecommendations(userInput, userLocation);
       } catch (error) {
-        console.error('API error, falling back to mock data:', error);
+        console.error('Kesalahan API, menggunakan data mock:', error);
         // Fallback to mock data if API fails
         travelData = generateMockTravelData(userInput);
       }
@@ -298,7 +298,7 @@ const TravelChatbot: React.FC = () => {
         })
       );
     } catch (error) {
-      console.error('Error getting travel recommendations:', error);
+      console.error('Kesalahan mendapatkan rekomendasi perjalanan:', error);
       
       // Remove loading indicator and add error message
       setMessages(prev => 

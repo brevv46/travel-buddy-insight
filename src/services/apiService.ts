@@ -43,18 +43,18 @@ export interface TravelResponse {
 export const generateTravelRecommendations = async (destination: string, userLocation: string = ""): Promise<TravelResponse> => {
   try {
     const prompt = `
-      Act as a travel advisor AI that provides detailed recommendations for a trip to ${destination}.
-      I am currently in ${userLocation || "an unspecified location"}.
+      Bertindaklah sebagai asisten perjalanan yang memberikan rekomendasi terperinci untuk perjalanan ke ${destination}.
+      Saya saat ini berada di ${userLocation || "lokasi yang belum ditentukan"}.
       
-      Please provide the following in JSON format without any additional text:
-      1. A packing list of 5-8 items specific to ${destination} with boolean "essential" property
-      2. 3 nearby places to visit within or close to ${destination} with name, description, and approximate distance
-      3. 3 local foods to try with name and description
-      4. Current weather information (be realistic and specific)
-      5. 3-5 safety tips for this location
-      6. A short motivational travel quote
+      Berikan informasi berikut dalam format JSON tanpa teks tambahan:
+      1. Daftar barang yang perlu dibawa (5-8 item) khusus untuk ${destination} dengan properti "essential" boolean
+      2. 3 tempat terdekat yang bisa dikunjungi di atau dekat dengan ${destination} dengan nama, deskripsi, dan perkiraan jarak
+      3. 3 makanan lokal yang harus dicoba dengan nama dan deskripsi
+      4. Informasi cuaca saat ini (yang realistis dan spesifik)
+      5. 3-5 tips keamanan untuk lokasi ini
+      6. Kutipan motivasi perjalanan yang pendek
       
-      Format your response as valid JSON with these keys: packingList, nearbyPlaces, localFoods, weatherInfo, safetyTips, motivationalQuote.
+      Format respons Anda sebagai JSON yang valid dengan kunci: packingList, nearbyPlaces, localFoods, weatherInfo, safetyTips, motivationalQuote.
     `;
 
     // Updated API endpoint to use Gemini 1.5 Pro
@@ -78,8 +78,8 @@ export const generateTravelRecommendations = async (destination: string, userLoc
     const data = await response.json();
     
     if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
-      console.error('Invalid Gemini API response:', data);
-      throw new Error('Invalid response from AI service');
+      console.error('Respons API Gemini tidak valid:', data);
+      throw new Error('Respons tidak valid dari layanan AI');
     }
     
     const textResponse = data.candidates[0].content.parts[0].text;
@@ -89,7 +89,7 @@ export const generateTravelRecommendations = async (destination: string, userLoc
     
     // Parse the JSON response
     const parsedResponse = JSON.parse(jsonText.trim());
-    console.log("Successfully parsed travel data:", parsedResponse);
+    console.log("Berhasil memproses data perjalanan:", parsedResponse);
     
     // Send weather notification via WhatsApp
     await sendWeatherNotification(parsedResponse.weatherInfo, destination, parsedResponse.motivationalQuote);
@@ -97,7 +97,7 @@ export const generateTravelRecommendations = async (destination: string, userLoc
     return parsedResponse;
   } catch (error) {
     console.error('Error generating travel recommendations:', error);
-    toast.error('Failed to generate travel recommendations. Please try again.');
+    toast.error('Gagal menghasilkan rekomendasi perjalanan. Silakan coba lagi.');
     throw error;
   }
 };
@@ -106,8 +106,8 @@ export const generateTravelRecommendations = async (destination: string, userLoc
 export const getCurrentLocation = (): Promise<GeolocationPosition> => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser');
-      reject(new Error('Geolocation not supported'));
+      toast.error('Geolokasi tidak didukung oleh browser Anda');
+      reject(new Error('Geolocation tidak didukung'));
     } else {
       navigator.geolocation.getCurrentPosition(resolve, reject);
     }
@@ -120,7 +120,7 @@ export const getLocationNameFromCoords = async (latitude: number, longitude: num
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
     const data = await response.json();
     
-    let locationName = 'Unknown location';
+    let locationName = 'Lokasi tidak diketahui';
     if (data && data.display_name) {
       const addressParts = [
         data.address?.city,
@@ -135,8 +135,8 @@ export const getLocationNameFromCoords = async (latitude: number, longitude: num
     
     return locationName;
   } catch (error) {
-    console.error('Error getting location name:', error);
-    return 'Unknown location';
+    console.error('Error mendapatkan nama lokasi:', error);
+    return 'Lokasi tidak diketahui';
   }
 };
 
@@ -151,7 +151,7 @@ export const sendWeatherNotification = async (
     let userPhone = localStorage.getItem('userPhoneNumber');
     
     if (!userPhone) {
-      toast.info('WhatsApp notification requires your phone number');
+      toast.info('Notifikasi WhatsApp memerlukan nomor telepon Anda');
       return;
     }
     
@@ -162,16 +162,16 @@ export const sendWeatherNotification = async (
     
     // Create the message for WhatsApp
     const message = `
-🌤️ *Weather Update for ${destination}*
-Temperature: ${weather.temperature}°C
-Condition: ${weather.condition}
-Humidity: ${weather.humidity}%
-Wind: ${weather.wind} km/h
+🌤️ *Info Cuaca untuk ${destination}*
+Suhu: ${weather.temperature}°C
+Kondisi: ${weather.condition}
+Kelembaban: ${weather.humidity}%
+Angin: ${weather.wind} km/h
 
-✨ *Travel Inspiration*
+✨ *Inspirasi Perjalanan*
 "${motivationalQuote}"
 
-Sent by Travel Buddy Insight
+Dikirim oleh Travel Buddy Insight
     `.trim();
 
     // Send the message using Fonnte API
@@ -190,12 +190,12 @@ Sent by Travel Buddy Insight
     const result = await response.json();
     
     if (result.status && result.status === true) {
-      toast.success('Weather update sent to your WhatsApp');
+      toast.success('Info cuaca telah dikirim ke WhatsApp Anda');
     } else {
-      throw new Error(result.message || 'Failed to send WhatsApp notification');
+      throw new Error(result.message || 'Gagal mengirim notifikasi WhatsApp');
     }
   } catch (error) {
-    console.error('Error sending WhatsApp notification:', error);
-    toast.error('Failed to send WhatsApp notification');
+    console.error('Error mengirim notifikasi WhatsApp:', error);
+    toast.error('Gagal mengirim notifikasi WhatsApp');
   }
 };

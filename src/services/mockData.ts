@@ -2,7 +2,7 @@
 import { TravelResponse } from './apiService';
 
 export const generateMockTravelData = (destination: string): TravelResponse => {
-  console.log("Using mock data for destination:", destination);
+  console.log("Menggunakan data mock untuk tujuan:", destination);
   
   // Generate mock data based on destination
   const isMountain = /gunung|bromo|rinjani|semeru|merapi|mountain/i.test(destination);
@@ -50,7 +50,7 @@ export const generateMockTravelData = (destination: string): TravelResponse => {
     ];
   } else if (isBeach) {
     packingList = [
-      { item: "Sunscreen SPF 50", essential: true },
+      { item: "Tabir Surya SPF 50", essential: true },
       { item: "Topi Pantai", essential: true },
       { item: "Baju Renang", essential: true },
       { item: "Kacamata Hitam", essential: false },
