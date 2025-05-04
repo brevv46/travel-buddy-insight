@@ -22,6 +22,7 @@ import {
   getLocationNameFromCoords, 
   TravelResponse 
 } from '@/services/apiService';
+import { generateMockTravelData } from '@/services/mockData';
 
 // Define message types
 type MessageType = 'user' | 'bot' | 'loading';
@@ -194,6 +195,7 @@ const TravelChatbot: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [userLocation, setUserLocation] = useState<string>('');
   const [showPhoneModal, setShowPhoneModal] = useState<boolean>(false);
+  const [currentDestination, setCurrentDestination] = useState<string>('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -263,6 +265,7 @@ const TravelChatbot: React.FC = () => {
     // Clear input and set loading state
     setInputValue('');
     setIsLoading(true);
+    setCurrentDestination(userInput);
     
     // Add loading indicator
     setMessages(prev => [
@@ -275,8 +278,15 @@ const TravelChatbot: React.FC = () => {
     ]);
     
     try {
-      // Generate travel recommendations
-      const travelData = await generateTravelRecommendations(userInput, userLocation);
+      // Try to generate travel recommendations via API
+      let travelData: TravelResponse;
+      try {
+        travelData = await generateTravelRecommendations(userInput, userLocation);
+      } catch (error) {
+        console.error('API error, falling back to mock data:', error);
+        // Fallback to mock data if API fails
+        travelData = generateMockTravelData(userInput);
+      }
       
       // Remove loading indicator and add bot response
       setMessages(prev => 
@@ -322,7 +332,7 @@ const TravelChatbot: React.FC = () => {
                 ) : (
                   <div className={`message-bubble ${message.type === 'user' ? 'user-message' : 'bot-message'}`}>
                     <p className="whitespace-pre-wrap">{message.text}</p>
-                    {message.travelData && <TravelCard travelData={message.travelData} destination={inputValue || 'your destination'} />}
+                    {message.travelData && <TravelCard travelData={message.travelData} destination={currentDestination} />}
                   </div>
                 )}
               </div>

@@ -39,7 +39,7 @@ export interface TravelResponse {
   motivationalQuote: string;
 }
 
-// Gemini API for generating travel recommendations
+// Updated Gemini API for generating travel recommendations
 export const generateTravelRecommendations = async (destination: string, userLocation: string = ""): Promise<TravelResponse> => {
   try {
     const prompt = `
@@ -57,7 +57,8 @@ export const generateTravelRecommendations = async (destination: string, userLoc
       Format your response as valid JSON with these keys: packingList, nearbyPlaces, localFoods, weatherInfo, safetyTips, motivationalQuote.
     `;
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
+    // Updated API endpoint to use Gemini 1.5 Pro
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -77,6 +78,7 @@ export const generateTravelRecommendations = async (destination: string, userLoc
     const data = await response.json();
     
     if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+      console.error('Invalid Gemini API response:', data);
       throw new Error('Invalid response from AI service');
     }
     
@@ -87,6 +89,7 @@ export const generateTravelRecommendations = async (destination: string, userLoc
     
     // Parse the JSON response
     const parsedResponse = JSON.parse(jsonText.trim());
+    console.log("Successfully parsed travel data:", parsedResponse);
     
     // Send weather notification via WhatsApp
     await sendWeatherNotification(parsedResponse.weatherInfo, destination, parsedResponse.motivationalQuote);
