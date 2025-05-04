@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 // API keys
@@ -102,6 +101,54 @@ export const generateTravelRecommendations = async (destination: string, userLoc
   }
 };
 
+// Fungsi baru untuk menghasilkan respons terhadap pertanyaan sederhana
+export const generateSimpleResponse = async (question: string): Promise<string> => {
+  try {
+    // Cek pertanyaan untuk pola umum
+    if (question.toLowerCase().includes('lapar') || question.toLowerCase().includes('makan')) {
+      return "Maaf, saya adalah asisten perjalanan dan hanya bisa membantu Anda dengan informasi tentang destinasi wisata. Saya tidak bisa merekomendasikan restoran atau makanan secara spesifik kecuali untuk destinasi wisata. Mohon tanyakan tentang tempat wisata yang ingin Anda kunjungi.";
+    }
+    
+    // Untuk pertanyaan umum lainnya
+    const prompt = `
+      Kamu adalah asisten perjalanan. Jawablah pertanyaan berikut dengan singkat dan jelas. 
+      Jika pertanyaan tidak terkait dengan perjalanan atau pariwisata, jelaskan bahwa kamu hanya bisa membantu dengan informasi perjalanan.
+      
+      Pertanyaan: ${question}
+    `;
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 200
+        }
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+      console.error('Respons API Gemini tidak valid:', data);
+      return "Maaf, saya adalah asisten perjalanan wisata. Saya hanya dapat memberikan informasi tentang tempat wisata. Silakan tanyakan pada saya tentang destinasi wisata yang ingin Anda kunjungi.";
+    }
+    
+    return data.candidates[0].content.parts[0].text;
+    
+  } catch (error) {
+    console.error('Error generating simple response:', error);
+    return "Maaf, saya tidak dapat memproses pertanyaan Anda saat ini. Saya adalah asisten perjalanan dan dapat membantu Anda dengan rekomendasi destinasi wisata.";
+  }
+};
+
 // Function to get the user's current location
 export const getCurrentLocation = (): Promise<GeolocationPosition> => {
   return new Promise((resolve, reject) => {
@@ -162,16 +209,16 @@ export const sendWeatherNotification = async (
     
     // Create the message for WhatsApp
     const message = `
-🌤️ *Info Cuaca untuk ${destination}*
-Suhu: ${weather.temperature}°C
-Kondisi: ${weather.condition}
-Kelembaban: ${weather.humidity}%
-Angin: ${weather.wind} km/h
-
-✨ *Inspirasi Perjalanan*
-"${motivationalQuote}"
-
-Dikirim oleh Travel Buddy Insight
+      🌡️ *Info Cuaca untuk ${destination}*
+      Suhu: ${weather.temperature}°C
+      Kondisi: ${weather.condition}
+      Kelembaban: ${weather.humidity}%
+      Angin: ${weather.wind} km/h
+      
+      ✨ *Inspirasi Perjalanan*
+      "${motivationalQuote}"
+      
+      Dikirim oleh Travel Buddy Insight
     `.trim();
 
     // Send the message using Fonnte API

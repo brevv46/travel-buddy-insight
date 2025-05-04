@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,8 @@ import {
   generateTravelRecommendations, 
   getCurrentLocation, 
   getLocationNameFromCoords, 
-  TravelResponse 
+  TravelResponse,
+  generateSimpleResponse 
 } from '@/services/apiService';
 import { generateMockTravelData } from '@/services/mockData';
 
@@ -33,6 +33,13 @@ interface Message {
   text: string;
   travelData?: TravelResponse;
 }
+
+// Daftar kata kunci terkait travel untuk filter pertanyaan
+const TRAVEL_KEYWORDS = [
+  'pergi', 'jalan', 'wisata', 'liburan', 'travel', 'pantai', 'gunung', 'danau', 'kota', 
+  'tempat', 'destinasi', 'trip', 'berlibur', 'berwisata', 'mengunjungi', 'kunjungi',
+  'pulau', 'taman', 'resor', 'hotel', 'penginapan', 'tiket'
+];
 
 // Initial welcome message from the bot
 const initialMessages: Message[] = [
@@ -200,6 +207,12 @@ const TravelChatbot: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Fungsi untuk memeriksa apakah input terkait perjalanan
+  const isTravelRelatedQuery = (input: string): boolean => {
+    input = input.toLowerCase();
+    return TRAVEL_KEYWORDS.some(keyword => input.includes(keyword.toLowerCase()));
+  };
+
   // Get user's location on component mount
   useEffect(() => {
     const getUserLocation = async () => {
@@ -265,7 +278,6 @@ const TravelChatbot: React.FC = () => {
     // Clear input and set loading state
     setInputValue('');
     setIsLoading(true);
-    setCurrentDestination(userInput);
     
     // Add loading indicator
     setMessages(prev => [
@@ -278,38 +290,55 @@ const TravelChatbot: React.FC = () => {
     ]);
     
     try {
-      // Try to generate travel recommendations via API
-      let travelData: TravelResponse;
-      try {
-        travelData = await generateTravelRecommendations(userInput, userLocation);
-      } catch (error) {
-        console.error('Kesalahan API, menggunakan data mock:', error);
-        // Fallback to mock data if API fails
-        travelData = generateMockTravelData(userInput);
+      // Cek apakah pertanyaan terkait perjalanan atau bukan
+      if (isTravelRelatedQuery(userInput)) {
+        setCurrentDestination(userInput);
+        
+        // Ini adalah pertanyaan terkait perjalanan, lanjutkan dengan respon travel
+        let travelData: TravelResponse;
+        try {
+          travelData = await generateTravelRecommendations(userInput, userLocation);
+        } catch (error) {
+          console.error('Kesalahan API, menggunakan data mock:', error);
+          // Fallback to mock data if API fails
+          travelData = generateMockTravelData(userInput);
+        }
+        
+        // Remove loading indicator and add bot response
+        setMessages(prev => 
+          prev.filter(msg => msg.id !== 'loading').concat({
+            id: `bot-${Date.now()}`,
+            type: 'bot',
+            text: `Berikut informasi perjalanan untuk ${userInput}:`,
+            travelData
+          })
+        );
+      } else {
+        // Ini bukan pertanyaan terkait perjalanan, berikan jawaban sederhana atau minta klarifikasi
+        const simpleResponse = await generateSimpleResponse(userInput);
+        
+        // Remove loading indicator and add bot response
+        setMessages(prev => 
+          prev.filter(msg => msg.id !== 'loading').concat({
+            id: `bot-${Date.now()}`,
+            type: 'bot',
+            text: simpleResponse
+          })
+        );
       }
-      
-      // Remove loading indicator and add bot response
-      setMessages(prev => 
-        prev.filter(msg => msg.id !== 'loading').concat({
-          id: `bot-${Date.now()}`,
-          type: 'bot',
-          text: `Berikut informasi perjalanan untuk ${userInput}:`,
-          travelData
-        })
-      );
     } catch (error) {
-      console.error('Kesalahan mendapatkan rekomendasi perjalanan:', error);
+      console.error('Kesalahan memproses pesan:', error);
       
       // Remove loading indicator and add error message
       setMessages(prev => 
         prev.filter(msg => msg.id !== 'loading').concat({
           id: `bot-${Date.now()}`,
           type: 'bot',
-          text: 'Maaf, saya tidak dapat memberikan informasi perjalanan saat ini. Silakan coba lagi nanti.'
+          text: 'Maaf, saya tidak dapat memproses pertanyaan Anda saat ini. Silakan coba lagi nanti.'
         })
       );
       
-      toast.error('Gagal mendapatkan informasi perjalanan. Silakan coba lagi.');
+      toast.error('Gagal memproses pesan. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
     }
